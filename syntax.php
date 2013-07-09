@@ -113,8 +113,11 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
         if (empty($data)) return false;
 
         switch  ($mode) {
-          case 'xhtml' : return $this->render_xhtml($renderer,$data);
-          case 'odt' : return $this->render_odt($renderer,$data);
+          case 'xhtml' :
+          case 'xml' :
+              return $this->render_xhtml($renderer,$data);
+          case 'odt' :
+              return $this->render_odt($renderer,$data);
           default :
             //  handle unknown formats generically - by calling standard render methods
             list ($state, $param) = $data;

@@ -1,6 +1,9 @@
 DefinitionList
 ==============
 
+For more information, please see
+https://www.dokuwiki.org/plugin:definitionlist
+
 ## License
 
 GPL 2 http://www.gnu.org/licenses/gpl.html
