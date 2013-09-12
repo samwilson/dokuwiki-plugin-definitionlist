@@ -4,3 +4,4 @@
  */
 
 $conf['dt_fancy']  = false;
+$conf['stylename'] = 'plugin_definitionlist';

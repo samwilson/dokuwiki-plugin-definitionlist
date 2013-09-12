@@ -4,3 +4,4 @@
  */
 
 $meta['dt_fancy']  = array('onoff');
+$meta['stylename'] = array('string');

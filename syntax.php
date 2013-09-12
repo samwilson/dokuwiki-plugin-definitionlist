@@ -44,6 +44,13 @@ if (!defined('DL_DD')) define('DL_DD', ':');     // character to indicate a defi
 // - set to false or 0 to use simple list html
 // - set to true or 1 to wrap the term element between <span class="term"> and </span>;
 
+// $this->getConf('stylename') : default = 'plugin_definitionlist'
+// class name applyed to dl tag
+// - set blank to use simple list html <dl> ... </dl>
+// - set stylename to apply style rule to dl like <dl class="stylename"> ... </dl>
+// The default stylename is defined in css files bundled.
+// Your own class should be defined in conf/userstyle.css file.
+
 // -----------------------------------------------------------------
 
 /**
@@ -137,7 +144,9 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
 
         switch ( $state ) {
           case DOKU_LEXER_ENTER:
-            $renderer->doc .= "\n<dl>\n";
+            $class = ($this->getConf('stylename')) ?
+                ' class="'.$this->getConf('stylename').'"' : '';
+            $renderer->doc .= "\n<dl".$class.">\n";
             $renderer->doc .= $this->_open($param);
             break;
           case DOKU_LEXER_MATCHED:
