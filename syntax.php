@@ -37,11 +37,12 @@ require_once(DOKU_PLUGIN.'syntax.php');
 if (!defined('DL_DT')) define('DL_DT', ';');     // character to indicate a term (dt)
 if (!defined('DL_DD')) define('DL_DD', ':');     // character to indicate a definition (dd)
 
-// define the html used to generate the definition list
-// - set to false or 0 to use simple list html <dl><dt>term</dt><dd>definition</dd> ... </dl>
-// - set to true or 1 to use wrap the term element in a span permitting more complex styling
-//   <dl><dt><span class='term'>term</span></dt><dd>definition</dd> ... </dl>
-if (!defined('DL_FANCY')) define('DL_FANCY', true);
+// ---------- [ Optional config parameters ] ------------------------
+
+// $this->getConf('dt_fancy') : default = false
+// additional markup for term element (dt tag)
+// - set to false or 0 to use simple list html
+// - set to true or 1 to wrap the term element between <span class="term"> and </span>;
 
 // -----------------------------------------------------------------
 
@@ -199,7 +200,7 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
      */
     function _open($tag) {
         array_push($this->stack, $tag);
-        $wrap = (DL_FANCY && $tag == 'dt') ? "<span class='term'>" : "";
+        $wrap = ($this->getConf('dt_fancy') && $tag == 'dt') ? "<span class='term'>" : "";
         return "<$tag>$wrap";
     }
 
@@ -209,7 +210,7 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
      */
     function _close() {
         $tag = array_pop($this->stack);
-        $wrap = (DL_FANCY && $tag == 'dt') ? "</span>" : "";
+        $wrap = ($this->getConf('dt_fancy') && $tag == 'dt') ? "</span>" : "";
         return "$wrap</$tag>\n";
     }
 
