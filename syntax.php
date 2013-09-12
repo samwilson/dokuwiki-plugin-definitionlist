@@ -56,17 +56,6 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
     /**
      * return some info
      */
-    function getInfo(){
-        return array(
-            'author' => 'Christopher Smith',
-            'email'  => 'chris@jalakai.co.uk',
-            'date'   => '2008-08-13',
-            'name'   => 'Definition list plugin',
-            'desc'   => 'Add HTML style definition list '.DL_DT.' term '.DL_DD.' definition',
-            'url'    => 'http://www.dokuwiki.org/plugin:definitionlist',
-        );
-    }
-
     function getType() { return 'container'; }
     function getAllowedTypes() { return array('container','substition','protected','disabled','formatting'); }
     function getPType() { return 'block'; }          // block, so not surrounded by <p> tags
