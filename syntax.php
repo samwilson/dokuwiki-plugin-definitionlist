@@ -37,11 +37,19 @@ require_once(DOKU_PLUGIN.'syntax.php');
 if (!defined('DL_DT')) define('DL_DT', ';');     // character to indicate a term (dt)
 if (!defined('DL_DD')) define('DL_DD', ':');     // character to indicate a definition (dd)
 
-// define the html used to generate the definition list
-// - set to false or 0 to use simple list html <dl><dt>term</dt><dd>definition</dd> ... </dl>
-// - set to true or 1 to use wrap the term element in a span permitting more complex styling
-//   <dl><dt><span class='term'>term</span></dt><dd>definition</dd> ... </dl>
-if (!defined('DL_FANCY')) define('DL_FANCY', true);
+// ---------- [ Optional config parameters ] ------------------------
+
+// $this->getConf('dt_fancy') : default = false
+// additional markup for term element (dt tag)
+// - set to false or 0 to use simple list html
+// - set to true or 1 to wrap the term element between <span class="term"> and </span>;
+
+// $this->getConf('stylename') : default = 'plugin_definitionlist'
+// class name applyed to dl tag
+// - set blank to use simple list html <dl> ... </dl>
+// - set stylename to apply style rule to dl like <dl class="stylename"> ... </dl>
+// The default stylename is defined in css files bundled.
+// Your own class should be defined in conf/userstyle.css file.
 
 // -----------------------------------------------------------------
 
@@ -56,17 +64,6 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
     /**
      * return some info
      */
-    function getInfo(){
-        return array(
-            'author' => 'Christopher Smith',
-            'email'  => 'chris@jalakai.co.uk',
-            'date'   => '2008-08-13',
-            'name'   => 'Definition list plugin',
-            'desc'   => 'Add HTML style definition list '.DL_DT.' term '.DL_DD.' definition',
-            'url'    => 'http://www.dokuwiki.org/plugin:definitionlist',
-        );
-    }
-
     function getType() { return 'container'; }
     function getAllowedTypes() { return array('container','substition','protected','disabled','formatting'); }
     function getPType() { return 'block'; }          // block, so not surrounded by <p> tags
@@ -147,7 +144,9 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
 
         switch ( $state ) {
           case DOKU_LEXER_ENTER:
-            $renderer->doc .= "\n<dl>\n";
+            $class = ($this->getConf('stylename')) ?
+                ' class="'.$this->getConf('stylename').'"' : '';
+            $renderer->doc .= "\n<dl".$class.">\n";
             $renderer->doc .= $this->_open($param);
             break;
           case DOKU_LEXER_MATCHED:
@@ -210,7 +209,7 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
      */
     function _open($tag) {
         array_push($this->stack, $tag);
-        $wrap = (DL_FANCY && $tag == 'dt') ? "<span class='term'>" : "";
+        $wrap = ($this->getConf('dt_fancy') && $tag == 'dt') ? "<span class='term'>" : "";
         return "<$tag>$wrap";
     }
 
@@ -220,7 +219,7 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
      */
     function _close() {
         $tag = array_pop($this->stack);
-        $wrap = (DL_FANCY && $tag == 'dt') ? "</span>" : "";
+        $wrap = ($this->getConf('dt_fancy') && $tag == 'dt') ? "</span>" : "";
         return "$wrap</$tag>\n";
     }
 

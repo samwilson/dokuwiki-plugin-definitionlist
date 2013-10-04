@@ -1,18 +1,18 @@
 /* plugin: definitionlist */
  
-dl, dt, dd {margin: 0; padding: 0}
+dl.plugin_definitionlist, dt, dd {margin: 0; padding: 0}
 
-dl {
+dl.plugin_definitionlist {
   font-size: 90%;
   padding-top: 1px;
 }
 
-html>body dl {
+html>body dl.plugin_definitionlist {
   padding-bottom: 0.5em;
   border-bottom: 1px dashed #e0e0e0;
 }
 
-dl:after {
+dl.plugin_definitionlist:after {
   content: '.';
   display: block;
   clear: both;
@@ -20,40 +20,36 @@ dl:after {
   visibility: hidden;
 }
 
-dt {
+dl.plugin_definitionlist dt {
   clear: left;
   margin-top: 0.5em;
 }
 
-dt+dt {
+dl.plugin_definitionlist dt+dt {
   margin-top: 0;
 }
 
-dd+dt {
+dl.plugin_definitionlist dd+dt {
   border-top: 1px dashed #e0e0e0;
   padding-top: 0.5em;
 }
 
-dt span.term {
+dl.plugin_definitionlist dt span.term {
   float: left;
   width: 10em;
 }
 
-dd {
+dl.plugin_definitionlist dd {
   margin-left: 10.3em;
   padding-left: 0.8em;
   background: url(images/bullet.gif) no-repeat 0 0.4em;
 }
- 
-dd p {
+
+dl.plugin_definitionlist dd p {
   margin: 0;
   padding: 0;
 }
 
-* html dl { height: 1px; }
-
-/* reset above style to prevent messing up plugin manager */
-#plugin_manager dd { background-image: none;}
-
+* html dl.plugin_definitionlist { height: 1px; }
 
 /* end plugin: definitionlist */
