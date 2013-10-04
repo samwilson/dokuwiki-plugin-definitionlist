@@ -99,7 +99,7 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
             case DOKU_LEXER_MATCHED:    return array($state, (substr($match, -1) == DL_DT) ? 'dt' : 'dd');
             case DOKU_LEXER_EXIT:       return array($state, '');
             case DOKU_LEXER_UNMATCHED:
-                    $handler->_addCall('cdata',array($match), $pos);
+                    $handler->_addCall('cdata', array(trim($match)), $pos);
                     return false;
         }
 
