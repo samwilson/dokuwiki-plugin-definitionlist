@@ -3,5 +3,5 @@
  * Default settings for the definitionlist plugin
  */
 
-$conf['dt_fancy']  = false;
-$conf['stylename'] = 'plugin_definitionlist';
+$conf['dt_fancy']  = true;
+$conf['classname'] = 'plugin_definitionlist';

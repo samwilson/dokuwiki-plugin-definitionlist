@@ -11,51 +11,44 @@
  *   ; term
  *   : definition
  *
- * As with other dokuwiki lists, each line must start with 2 spaces or a tab
- * Nested definition lists are not supported at this time
+ * As with other dokuwiki lists, each line must start with 2 spaces or a tab.
+ * Nested definition lists are not supported at this time.
  *
  * This plugin is heavily based on the definitions plugin by Pavel Vitis which
  * in turn drew from the original definition list plugin by Stephane Chamberland.
  * A huge thanks to both of them.
+ * 
+ * Configuration:
+ * 
+ * dt_fancy    Whether to wrap DT content in <span class="term">Term</span>.
+ *             Default true.
+ * classname   The class name to be given to the DL element.
+ *             Default 'plugin_definitionlist'. This is what is used in the
+ *             bundled CSS file.
  *
- * ODT support provided by Gabriel Birke <birke@d-scribe.de>
+ * ODT support provided by Gabriel Birke
  *
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
  * @author     Chris Smith <chris [at] jalakai [dot] co [dot] uk>
- *
+ * @author     Gabriel Birke <birke@d-scribe.de>
  */
 
 if (!defined('DOKU_INC')) define('DOKU_INC',realpath(dirname(__FILE__).'/../../').'/');
 if (!defined('DOKU_PLUGIN')) define('DOKU_PLUGIN',DOKU_INC.'lib/plugins/');
 require_once(DOKU_PLUGIN.'syntax.php');
 
-// ---------- [ Settings ] -----------------------------------------
-
-// define the trigger characters
-//   ";" & ":" are the mediawiki settings.
-//   "=" & ":" are the settings for the original plugin by Pavel
-if (!defined('DL_DT')) define('DL_DT', ';');     // character to indicate a term (dt)
-if (!defined('DL_DD')) define('DL_DD', ':');     // character to indicate a definition (dd)
-
-// ---------- [ Optional config parameters ] ------------------------
-
-// $this->getConf('dt_fancy') : default = false
-// additional markup for term element (dt tag)
-// - set to false or 0 to use simple list html
-// - set to true or 1 to wrap the term element between <span class="term"> and </span>;
-
-// $this->getConf('stylename') : default = 'plugin_definitionlist'
-// class name applyed to dl tag
-// - set blank to use simple list html <dl> ... </dl>
-// - set stylename to apply style rule to dl like <dl class="stylename"> ... </dl>
-// The default stylename is defined in css files bundled.
-// Your own class should be defined in conf/userstyle.css file.
-
-// -----------------------------------------------------------------
+/**
+ * Settings:
+ * 
+ * Define the trigger characters:
+ * ";" & ":" are the mediawiki settings.
+ * "=" & ":" are the settings for the original plugin by Pavel.
+ */
+if (!defined('DL_DT')) define('DL_DT', ';'); // character to indicate a term (dt)
+if (!defined('DL_DD')) define('DL_DD', ':'); // character to indicate a definition (dd)
 
 /**
- * All DokuWiki plugins to extend the parser/rendering mechanism
- * need to inherit from this class
+ * 
  */
 class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
 
@@ -144,8 +137,8 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
 
         switch ( $state ) {
           case DOKU_LEXER_ENTER:
-            $class = ($this->getConf('stylename')) ?
-                ' class="'.$this->getConf('stylename').'"' : '';
+            $class = ($this->getConf('classname')) ?
+                ' class="'.$this->getConf('classname').'"' : '';
             $renderer->doc .= "\n<dl".$class.">\n";
             $renderer->doc .= $this->_open($param);
             break;

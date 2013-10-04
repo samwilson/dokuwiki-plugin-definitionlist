@@ -3,5 +3,5 @@
  * English language file for definitionlist plugin
  */
 
-$lang['dt_fancy']  = 'make content of dt tag enclosed between &lt;span class="term"&gt; and &lt;/span&gt;';
-$lang['stylename'] = 'default style class name for dl tag';
+$lang['dt_fancy']  = 'Wrap the contents of DT elements with <code>&lt;span class="term"&gt;<em>Term</em>&lt;/span&gt;</code>';
+$lang['classname'] = 'Class name for DL elements';
