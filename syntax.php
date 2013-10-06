@@ -67,12 +67,12 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
      */
     function connectTo($mode) {
 
-       $this->Lexer->addEntryPattern('\n {2,}'.DL_DT, $mode, 'plugin_definitionlist');
-       $this->Lexer->addEntryPattern('\n\t{1,}'.DL_DT, $mode, 'plugin_definitionlist');
+        $this->Lexer->addEntryPattern('\n {2,}'.DL_DT, $mode, 'plugin_definitionlist');
+        $this->Lexer->addEntryPattern('\n\t{1,}'.DL_DT, $mode, 'plugin_definitionlist');
 
-       $this->Lexer->addPattern('(?: '.DL_DD.' )', 'plugin_definitionlist');
-       $this->Lexer->addPattern('\n {2,}(?:'.DL_DT.'|'.DL_DD.')', 'plugin_definitionlist');
-       $this->Lexer->addPattern('\n\t{1,}(?:'.DL_DT.'|'.DL_DD.')', 'plugin_definitionlist');
+        $this->Lexer->addPattern('(?: '.DL_DD.' )', 'plugin_definitionlist');
+        $this->Lexer->addPattern('\n {2,}(?:'.DL_DT.'|'.DL_DD.')', 'plugin_definitionlist');
+        $this->Lexer->addPattern('\n\t{1,}(?:'.DL_DT.'|'.DL_DD.')', 'plugin_definitionlist');
     }
 
     function postConnect() {
@@ -103,30 +103,30 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
         if (empty($data)) return false;
 
         switch  ($mode) {
-          case 'xhtml' :
-          case 'xml' :
-              return $this->render_xhtml($renderer,$data);
-          case 'odt' :
-              return $this->render_odt($renderer,$data);
-          default :
-            //  handle unknown formats generically - by calling standard render methods
-            list ($state, $param) = $data;
-            switch ( $state ) {
-               case DOKU_LEXER_ENTER:
-                $renderer->p_open();
-                break;
-              case DOKU_LEXER_MATCHED:
-                $renderer->p_close();
-                $renderer->p_open();
-                break;
-              case DOKU_LEXER_UNMATCHED:                            // defensive, shouldn't occur
-                $renderer->cdata($param);
-                break;
-              case DOKU_LEXER_EXIT:
-                $renderer->p_close();
-                break;
-            }
-            return true;
+            case 'xhtml' :
+            case 'xml' :
+                return $this->render_xhtml($renderer,$data);
+            case 'odt' :
+                return $this->render_odt($renderer,$data);
+            default :
+                //  handle unknown formats generically - by calling standard render methods
+                list ($state, $param) = $data;
+                switch ( $state ) {
+                    case DOKU_LEXER_ENTER:
+                        $renderer->p_open();
+                        break;
+                    case DOKU_LEXER_MATCHED:
+                        $renderer->p_close();
+                        $renderer->p_open();
+                        break;
+                    case DOKU_LEXER_UNMATCHED: // defensive, shouldn't occur
+                        $renderer->cdata($param);
+                        break;
+                    case DOKU_LEXER_EXIT:
+                        $renderer->p_close();
+                        break;
+                }
+                return true;
         }
 
         return false;
@@ -136,23 +136,23 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
         list ($state, $param) = $data;
 
         switch ( $state ) {
-          case DOKU_LEXER_ENTER:
-            $class = ($this->getConf('classname')) ?
-                ' class="'.$this->getConf('classname').'"' : '';
-            $renderer->doc .= "\n<dl".$class.">\n";
-            $renderer->doc .= $this->_open($param);
-            break;
-          case DOKU_LEXER_MATCHED:
-            $renderer->doc .= $this->_close();
-            $renderer->doc .= $this->_open($param);
-            break;
-          case DOKU_LEXER_UNMATCHED:                            // defensive, shouldn't occur
-            $renderer->cdata($param);
-            break;
-          case DOKU_LEXER_EXIT:
-            $renderer->doc .= $this->_close();
-            $renderer->doc .= "</dl>\n";
-            break;
+            case DOKU_LEXER_ENTER:
+                $class = ($this->getConf('classname')) ?
+                    ' class="'.$this->getConf('classname').'"' : '';
+                $renderer->doc .= "\n<dl".$class.">\n";
+                $renderer->doc .= $this->_open($param);
+                break;
+            case DOKU_LEXER_MATCHED:
+                $renderer->doc .= $this->_close();
+                $renderer->doc .= $this->_open($param);
+                break;
+            case DOKU_LEXER_UNMATCHED: // defensive, shouldn't occur
+                $renderer->cdata($param);
+                break;
+            case DOKU_LEXER_EXIT:
+                $renderer->doc .= $this->_close();
+                $renderer->doc .= "</dl>\n";
+                break;
         }
         return true;
     }
@@ -167,30 +167,30 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
 
         $param_styles = array('dd' => 'def_f5_list', 'dt' => 'def_f5_term');
         switch ( $state ) {
-          case DOKU_LEXER_ENTER:
-            $renderer->autostyles["def_f5_term"] = '
+            case DOKU_LEXER_ENTER:
+                $renderer->autostyles["def_f5_term"] = '
                   <style:style style:name="def_f5_term" style:display-name="def_term" style:family="paragraph">
                       <style:paragraph-properties fo:margin-top="0.18cm" fo:margin-bottom="0cm" fo:keep-together="always" style:page-number="auto" fo:keep-with-next="always"/>
                       <style:text-properties fo:font-weight="bold"/>
                   </style:style>';
-            $renderer->autostyles["def_f5_list"] = '
+                $renderer->autostyles["def_f5_list"] = '
                   <style:style style:name="def_f5_list" style:display-name="def_list" style:family="paragraph">
                       <style:paragraph-properties fo:margin-left="0.25cm" fo:margin-right="0cm" fo:text-indent="0cm" style:auto-text-indent="false"/>
                   </style:style>';
-            $renderer->doc .= '</text:p>';
-            $renderer->doc .= '<text:p  text:style-name="'.$param_styles[$param].'">';
-            break;
-          case DOKU_LEXER_MATCHED:
-            $renderer->doc .= '</text:p>';
-            $renderer->doc .= '<text:p  text:style-name="'.$param_styles[$param].'">';
-            break;
-          case DOKU_LEXER_UNMATCHED:                            // defensive, shouldn't occur
-            $renderer->cdata($param);
-            break;
-          case DOKU_LEXER_EXIT:
-            $renderer->doc .= '</text:p>';
-            $renderer->p_open();
-            break;
+                $renderer->doc .= '</text:p>';
+                $renderer->doc .= '<text:p  text:style-name="'.$param_styles[$param].'">';
+                break;
+            case DOKU_LEXER_MATCHED:
+                $renderer->doc .= '</text:p>';
+                $renderer->doc .= '<text:p  text:style-name="'.$param_styles[$param].'">';
+                break;
+            case DOKU_LEXER_UNMATCHED: // defensive, shouldn't occur
+                $renderer->cdata($param);
+                break;
+            case DOKU_LEXER_EXIT:
+                $renderer->doc .= '</text:p>';
+                $renderer->p_open();
+                break;
         }
         return true;
     }
