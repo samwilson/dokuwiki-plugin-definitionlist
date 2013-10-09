@@ -77,7 +77,7 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
 
     function postConnect() {
         // we end the definition list when we encounter a blank line
-        $this->Lexer->addExitPattern('\n[ \t]*\n','plugin_definitionlist');
+        $this->Lexer->addExitPattern('\n(?=[ \t]*\n)','plugin_definitionlist');
     }
 
     /**
