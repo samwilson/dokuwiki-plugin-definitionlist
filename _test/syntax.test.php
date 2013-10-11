@@ -82,8 +82,7 @@ class plugin_definitionlist_syntax_test extends DokuWikiTest {
             ."<dt><span class='term'>Term</span></dt>\n"
             ."<dd>Definition</dd>\n"
             ."</dl>\n"
-            ."\n"
-            ."<pre class=\"code\">Preformatted.</pre>\n";
+            ."<pre class=\"code\">Preformatted</pre>\n";
         $renderer = new Doku_Renderer_xhtml();
         $actual = $renderer->render($in, 'xhtml');
         $this->assertEquals($expected, $actual);
@@ -139,6 +138,32 @@ class plugin_definitionlist_syntax_test extends DokuWikiTest {
             ."\n"
             ."<dl class=\"plugin_definitionlist\">\n"
             ."<dt><span class='term'>Another term</span></dt>\n"
+            ."<dd>Def</dd>\n"
+            ."</dl>\n";
+        $renderer = new Doku_Renderer();
+        $actual = $renderer->render($in, 'xhtml');
+        $this->assertEquals($expected, $actual);
+    }
+
+    function test_dd_with_ul() {
+        $in = "\n"
+              ."  ; Term\n"
+              ."  : Some parts:\n"
+              ."  * Part 1\n"
+              ."  * Part 2\n"
+              ."  ; Term 2\n"
+              ."  : Def\n";
+        $expected = "\n"
+            ."<dl class=\"plugin_definitionlist\">\n"
+            ."<dt><span class='term'>Term</span></dt>\n"
+            ."<dd>Some parts:<ul>\n"
+            ."<li class=\"level1\"><div class=\"li\"> Part 1</div>\n"
+            ."</li>\n"
+            ."<li class=\"level1\"><div class=\"li\"> Part 2</div>\n"
+            ."</li>\n"
+            ."</ul>\n"
+            ."</dd>\n"
+            ."<dt><span class='term'>Term</span></dt>\n"
             ."<dd>Def</dd>\n"
             ."</dl>\n";
         $renderer = new Doku_Renderer();
