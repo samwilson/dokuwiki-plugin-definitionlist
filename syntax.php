@@ -90,7 +90,7 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
 
             case DOKU_LEXER_MATCHED:
                     $oldtag = array_pop($this->stack);
-                    $newtag = (substr($match, -1) == DL_DT) ? 'dt' : 'dd';
+                    $newtag = (substr(rtrim($match), -1) == DL_DT) ? 'dt' : 'dd';
                     array_push($this->stack, $newtag);
 
                     $this->_writeCall($oldtag,DOKU_LEXER_EXIT,$pos,$match,$handler);  // close the current definition list item...
@@ -247,10 +247,14 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
      * @return  (string)          html used to open the tag
      */
     protected function _open($tag) {
-        if ($tag == 'dl' && $this->getConf('classname')) {
-            $tag .= ' class="'.$this->getConf('classname').'"';
+        if ($tag == 'dl') {
+            if ($this->getConf('classname')) {
+                $tag .= ' class="'.$this->getConf('classname').'"';
+            }
+            $wrap = NL;
+        } else {
+            $wrap = ($tag == 'dt' && $this->getConf('dt_fancy')) ? '<span class="term">' : '';
         }
-        $wrap = ($tag == 'dt' && $this->getConf('dt_fancy')) ? '<span class="term">' : '';
         return "<$tag>$wrap";
     }
 
