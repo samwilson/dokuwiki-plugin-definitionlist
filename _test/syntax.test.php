@@ -9,10 +9,10 @@ class plugin_definitionlist_syntax_test extends DokuWikiTest {
     function test_basic() {
         $in1 = "\n"
               ."  ; Term\n"
-              ."  : Definition\n";
+              ."  :Definition\n";
         $in2 = "\n  ; Term : Definition\n";
-        $expected = "\n<dl class=\"plugin_definitionlist\">\n"
-            ."<dt><span class='term'>Term</span></dt>\n"
+        $expected = "<dl class=\"plugin_definitionlist\">\n"
+            ."<dt><span class=\"term\"> Term</span></dt>\n"
             ."<dd>Definition</dd>\n"
             ."</dl>\n";
 
@@ -28,10 +28,10 @@ class plugin_definitionlist_syntax_test extends DokuWikiTest {
               ."  ; Term\n"
               ."  : Definition one\n"
               ."  : Definition two\n";
-        $expected = "\n<dl class=\"plugin_definitionlist\">\n"
-            ."<dt><span class='term'>Term</span></dt>\n"
-            ."<dd>Definition one</dd>\n"
-            ."<dd>Definition two</dd>\n"
+        $expected = "<dl class=\"plugin_definitionlist\">\n"
+            ."<dt><span class=\"term\"> Term</span></dt>\n"
+            ."<dd> Definition one</dd>\n"
+            ."<dd> Definition two</dd>\n"
             ."</dl>\n";
 
         $renderer = new Doku_Renderer_xhtml();
@@ -44,9 +44,9 @@ class plugin_definitionlist_syntax_test extends DokuWikiTest {
               ."  ; Term\n"
               ."  : Definition one\n"
               ."continues\n";
-        $expected = "\n<dl class=\"plugin_definitionlist\">\n"
-            ."<dt><span class='term'>Term</span></dt>\n"
-            ."<dd>Definition one\ncontinues</dd>\n"
+        $expected = "<dl class=\"plugin_definitionlist\">\n"
+            ."<dt><span class=\"term\"> Term</span></dt>\n"
+            ."<dd> Definition one\ncontinues</dd>\n"
             ."</dl>\n";
 
         $renderer = new Doku_Renderer_xhtml();
@@ -61,9 +61,9 @@ class plugin_definitionlist_syntax_test extends DokuWikiTest {
             ."continues\n"
             ."\n"
             ."Then new paragraph.\n";
-        $expected = "\n<dl class=\"plugin_definitionlist\">\n"
-            ."<dt><span class='term'>Term</span></dt>\n"
-            ."<dd>Definition one\ncontinues</dd>\n"
+        $expected = "<dl class=\"plugin_definitionlist\">\n"
+            ."<dt><span class=\"term\"> Term</span></dt>\n"
+            ."<dd> Definition one\ncontinues</dd>\n"
             ."</dl>\n"
             ."\n"
             ."<p>\nThen new paragraph.\n</p>\n";
@@ -78,9 +78,9 @@ class plugin_definitionlist_syntax_test extends DokuWikiTest {
             ."  : Definition\n"
             ."\n"
             ."  Preformatted\n";
-        $expected = "\n<dl class=\"plugin_definitionlist\">\n"
-            ."<dt><span class='term'>Term</span></dt>\n"
-            ."<dd>Definition</dd>\n"
+        $expected = "<dl class=\"plugin_definitionlist\">\n"
+            ."<dt><span class=\"term\"> Term</span></dt>\n"
+            ."<dd> Definition</dd>\n"
             ."</dl>\n"
             ."<pre class=\"code\">Preformatted</pre>\n";
         $renderer = new Doku_Renderer_xhtml();
@@ -92,10 +92,10 @@ class plugin_definitionlist_syntax_test extends DokuWikiTest {
         global $conf;
         $in1 = "\n"
               ."  ; Term\n"
-              ."  : Definition\n";
+              ."  :Definition\n";
         $in2 = "\n  ; Term : Definition\n";
-        $expected = "\n<dl class=\"plugin_definitionlist\">\n"
-            ."<dt>Term</dt>\n"
+        $expected = "<dl class=\"plugin_definitionlist\">\n"
+            ."<dt> Term</dt>\n"
             ."<dd>Definition</dd>\n"
             ."</dl>\n";
 
@@ -113,9 +113,9 @@ class plugin_definitionlist_syntax_test extends DokuWikiTest {
         $in = "\n"
               ."  ; Term\n"
               ."  : Definition\n";
-        $expected = "\n<dl class=\"lorem-ipsum\">\n"
-            ."<dt><span class='term'>Term</span></dt>\n"
-            ."<dd>Definition</dd>\n"
+        $expected = "<dl class=\"lorem-ipsum\">\n"
+            ."<dt><span class=\"term\"> Term</span></dt>\n"
+            ."<dd> Definition</dd>\n"
             ."</dl>\n";
 
         $conf['plugin']['definitionlist']['classname'] = 'lorem-ipsum';
@@ -130,14 +130,12 @@ class plugin_definitionlist_syntax_test extends DokuWikiTest {
               ."  ; Term : Def\n"
               ."\n"
               ."  ; Another term : Def\n";
-        $expected = "\n"
-            ."<dl class=\"plugin_definitionlist\">\n"
-            ."<dt><span class='term'>Term</span></dt>\n"
+        $expected = "<dl class=\"plugin_definitionlist\">\n"
+            ."<dt><span class=\"term\"> Term</span></dt>\n"
             ."<dd>Def</dd>\n"
             ."</dl>\n"
-            ."\n"
             ."<dl class=\"plugin_definitionlist\">\n"
-            ."<dt><span class='term'>Another term</span></dt>\n"
+            ."<dt><span class=\"term\"> Another term</span></dt>\n"
             ."<dd>Def</dd>\n"
             ."</dl>\n";
         $renderer = new Doku_Renderer();
@@ -151,20 +149,20 @@ class plugin_definitionlist_syntax_test extends DokuWikiTest {
               ."  : Some parts:\n"
               ."  * Part 1\n"
               ."  * Part 2\n"
+              ."\n"
               ."  ; Term 2\n"
               ."  : Def\n";
-        $expected = "\n"
-            ."<dl class=\"plugin_definitionlist\">\n"
-            ."<dt><span class='term'>Term</span></dt>\n"
-            ."<dd>Some parts:<ul>\n"
+        $expected = "<dl class=\"plugin_definitionlist\">\n"
+            ."<dt><span class=\"term\"> Term</span></dt>\n"
+            ."<dd> Some parts:<ul>\n"
             ."<li class=\"level1\"><div class=\"li\"> Part 1</div>\n"
             ."</li>\n"
             ."<li class=\"level1\"><div class=\"li\"> Part 2</div>\n"
             ."</li>\n"
             ."</ul>\n"
             ."</dd>\n"
-            ."<dt><span class='term'>Term</span></dt>\n"
-            ."<dd>Def</dd>\n"
+            ."<dt><span class=\"term\"> Term 2</span></dt>\n"
+            ."<dd> Def</dd>\n"
             ."</dl>\n";
         $renderer = new Doku_Renderer();
         $actual = $renderer->render($in, 'xhtml');
@@ -178,11 +176,11 @@ class plugin_definitionlist_syntax_test extends DokuWikiTest {
               ."  * Part 1\n"
               ."  * Part 2\n"
               ."\n"
+              ."\n"
               ."  - Item\n";
-        $expected = "\n"
-            ."<dl class=\"plugin_definitionlist\">\n"
-            ."<dt><span class='term'>Term</span></dt>\n"
-            ."<dd>Some parts:<ul>\n"
+        $expected = "<dl class=\"plugin_definitionlist\">\n"
+            ."<dt><span class=\"term\"> Term</span></dt>\n"
+            ."<dd> Some parts:<ul>\n"
             ."<li class=\"level1\"><div class=\"li\"> Part 1</div>\n"
             ."</li>\n"
             ."<li class=\"level1\"><div class=\"li\"> Part 2</div>\n"
@@ -190,7 +188,6 @@ class plugin_definitionlist_syntax_test extends DokuWikiTest {
             ."</ul>\n"
             ."</dd>\n"
             ."</dl>\n"
-            ."\n"
             ."<ol>\n"
             ."<li class=\"level1\"><div class=\"li\"> Item</div>"
             ."\n</li>\n"
@@ -207,11 +204,11 @@ class plugin_definitionlist_syntax_test extends DokuWikiTest {
               ."  * Part 1\n"
               ."  * Part 2\n"
               ."\n"
+              ."\n"
               ."  ; Another term : Definition\n";
-        $expected = "\n"
-            ."<dl class=\"plugin_definitionlist\">\n"
-            ."<dt><span class='term'>Term</span></dt>\n"
-            ."<dd>Some parts:<ul>\n"
+        $expected = "<dl class=\"plugin_definitionlist\">\n"
+            ."<dt><span class=\"term\"> Term</span></dt>\n"
+            ."<dd> Some parts:<ul>\n"
             ."<li class=\"level1\"><div class=\"li\"> Part 1</div>\n"
             ."</li>\n"
             ."<li class=\"level1\"><div class=\"li\"> Part 2</div>\n"
@@ -219,9 +216,8 @@ class plugin_definitionlist_syntax_test extends DokuWikiTest {
             ."</ul>\n"
             ."</dd>\n"
             ."</dl>\n"
-            ."\n"
             ."<dl class=\"plugin_definitionlist\">\n"
-            ."<dt><span class='term'>Another term</span></dt>\n"
+            ."<dt><span class=\"term\"> Another term</span></dt>\n"
             ."<dd>Definition</dd>\n"
             ."</dl>\n";
         $renderer = new Doku_Renderer();
