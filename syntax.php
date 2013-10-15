@@ -17,13 +17,13 @@
  * This plugin is heavily based on the definitions plugin by Pavel Vitis which
  * in turn drew from the original definition list plugin by Stephane Chamberland.
  * A huge thanks to both of them.
- * 
+ *
  * Configuration:
- * 
+ *
  * dt_fancy    Whether to wrap DT content in <span class="term">Term</span>.
  *             Default true.
- * classname   The class name to be given to the DL element.
- *             Default 'plugin_definitionlist'. This is what is used in the
+ * classname   The html class name to be given to the DL element.
+ *             Default 'plugin_definitionlist'. This is the class used in the
  *             bundled CSS file.
  *
  * ODT support provided by Gabriel Birke
@@ -39,7 +39,7 @@ require_once(DOKU_PLUGIN.'syntax.php');
 
 /**
  * Settings:
- * 
+ *
  * Define the trigger characters:
  * ";" & ":" are the mediawiki settings.
  * "=" & ":" are the settings for the original plugin by Pavel.
@@ -48,24 +48,21 @@ if (!defined('DL_DT')) define('DL_DT', ';'); // character to indicate a term (dt
 if (!defined('DL_DD')) define('DL_DD', ':'); // character to indicate a definition (dd)
 
 /**
- * 
+ *
  */
 class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
 
-    var $stack = array();
+    protected $stack = array();    // stack of currently open definition list items - used by handle() method
 
-    /**
-     * return some info
-     */
-    function getType() { return 'container'; }
-    function getAllowedTypes() { return array('container','substition','protected','disabled','formatting'); }
-    function getPType() { return 'block'; }          // block, so not surrounded by <p> tags
-    function getSort() { return 10; }                // before preformatted (20)
+    public function getType() { return 'container'; }
+    public function getAllowedTypes() { return array('container','substition','protected','disabled','formatting'); }
+    public function getPType() { return 'block'; }          // block, so not surrounded by <p> tags
+    public function getSort() { return 10; }                // before preformatted (20)
 
     /**
      * Connect pattern to lexer
      */
-    function connectTo($mode) {
+    public function connectTo($mode) {
 
         $this->Lexer->addEntryPattern('\n {2,}'.DL_DT, $mode, 'plugin_definitionlist');
         $this->Lexer->addEntryPattern('\n\t{1,}'.DL_DT, $mode, 'plugin_definitionlist');
@@ -75,7 +72,7 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
         $this->Lexer->addPattern('\n\t{1,}(?:'.DL_DT.'|'.DL_DD.')', 'plugin_definitionlist');
     }
 
-    function postConnect() {
+    public function postConnect() {
         // we end the definition list when we encounter a blank line
         $this->Lexer->addExitPattern('\n(?=[ \t]*\n)','plugin_definitionlist');
     }
@@ -83,48 +80,76 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
     /**
      * Handle the match
      */
-    function handle($match, $state, $pos, &$handler) {
+    public function handle($match, $state, $pos, &$handler) {
         switch ( $state ) {
-            case DOKU_LEXER_ENTER:      return array($state, 'dt');
-            case DOKU_LEXER_MATCHED:    return array($state, (substr($match, -1) == DL_DT) ? 'dt' : 'dd');
-            case DOKU_LEXER_EXIT:       return array($state, '');
+            case DOKU_LEXER_ENTER:
+                    array_push($this->stack, 'dt');
+                    $this->_writeCall('dl',DOKU_LEXER_ENTER,$pos,$match,$handler);    // open a new DL
+                    $this->_writeCall('dt',DOKU_LEXER_ENTER,$pos,$match,$handler);    // always start with a DT
+                    break;
+
+            case DOKU_LEXER_MATCHED:
+                    $oldtag = array_pop($this->stack);
+                    $newtag = (substr($match, -1) == DL_DT) ? 'dt' : 'dd';
+                    array_push($this->stack, $newtag);
+
+                    $this->_writeCall($oldtag,DOKU_LEXER_EXIT,$pos,$match,$handler);  // close the current definition list item...
+                    $this->_writeCall($newtag,DOKU_LEXER_ENTER,$pos,$match,$handler); // ...and open the new dl item
+                    break;
+
+            case DOKU_LEXER_EXIT:
+                    // clean up & close any dl items on the stack
+                    while ($tag = array_pop($this->stack)) {
+                        $this->_writeCall($tag,DOKU_LEXER_EXIT,$pos,$match,$handler);
+                    }
+
+                    // and finally close the surrounding DL
+                    $this->_writeCall('dl',DOKU_LEXER_EXIT,$pos,$match,$handler);
+                    break;
+
             case DOKU_LEXER_UNMATCHED:
-                    $handler->_addCall('cdata', array(trim($match)), $pos);
-                    return false;
+                    $handler->base($match, $state, $pos);    // cdata --- use base() as _writeCall() is prefixed for private/protected
+                    break;
         }
 
         return false;
     }
 
     /**
+     * helper function to simplify writing plugin calls to the instruction list
+     *
+     * instruction params are of the format:
+     *    0 => tag    (string)    'dl','dt','dd'
+     *    1 => state  (int)       DOKU_LEXER_??? state constant
+     *    2 => match  (string)    expected to be empty
+     */
+    protected function _writeCall($tag, $state, $pos, $match, &$handler) {
+        $handler->addPluginCall('definitionlist', array($tag, $state, ''), $state, $pos, $match);
+    }
+
+    /**
      * Create output
      */
-    function render($mode, &$renderer, $data) {
+    public function render($format, &$renderer, $data) {
         if (empty($data)) return false;
 
-        switch  ($mode) {
-            case 'xhtml' :
-            case 'xml' :
-                return $this->render_xhtml($renderer,$data);
-            case 'odt' :
-                return $this->render_odt($renderer,$data);
+        switch  ($format) {
+            case 'xhtml' : return $this->render_xhtml($renderer,$data);
+            case 'odt'   : return $this->render_odt($renderer,$data);
             default :
-                //  handle unknown formats generically - by calling standard render methods
-                list ($state, $param) = $data;
+                //  handle unknown formats generically - map both 'dt' & 'dd' to paragraphs; ingnore the 'dl' container
+                list ($tag, $state, $match) = $data;
                 switch ( $state ) {
                     case DOKU_LEXER_ENTER:
-                        $renderer->p_open();
-                        break;
-                    case DOKU_LEXER_MATCHED:
-                        $renderer->p_close();
-                        $renderer->p_open();
-                        break;
-                    case DOKU_LEXER_UNMATCHED: // defensive, shouldn't occur
-                        $renderer->cdata($param);
-                        break;
-                    case DOKU_LEXER_EXIT:
-                        $renderer->p_close();
-                        break;
+                    if ($tag != 'dl') $renderer->p_open();
+                    break;
+                case DOKU_LEXER_MATCHED:                              // fall-thru
+                case DOKU_LEXER_UNMATCHED:                            // defensive, shouldn't occur
+                    $renderer->cdata($match);
+                    break;
+                case DOKU_LEXER_EXIT:
+                    if ($tag != 'dl') $renderer->p_close();
+                    break;
                 }
                 return true;
         }
@@ -132,26 +157,23 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
         return false;
     }
 
-    function render_xhtml(&$renderer, $data) {
-        list ($state, $param) = $data;
+    /**
+     * create output for the xhtml renderer
+     *
+     */
+    protected function render_xhtml(&$renderer, $data) {
+        list($tag,$state,$match) = $data;
 
         switch ( $state ) {
             case DOKU_LEXER_ENTER:
-                $class = ($this->getConf('classname')) ?
-                    ' class="'.$this->getConf('classname').'"' : '';
-                $renderer->doc .= "\n<dl".$class.">\n";
-                $renderer->doc .= $this->_open($param);
+                $renderer->doc .= $this->_open($tag);
                 break;
             case DOKU_LEXER_MATCHED:
-                $renderer->doc .= $this->_close();
-                $renderer->doc .= $this->_open($param);
-                break;
-            case DOKU_LEXER_UNMATCHED: // defensive, shouldn't occur
-                $renderer->cdata($param);
+            case DOKU_LEXER_UNMATCHED:                            // defensive, shouldn't occur
+                $renderer->cdata($tag);
                 break;
             case DOKU_LEXER_EXIT:
-                $renderer->doc .= $this->_close();
-                $renderer->doc .= "</dl>\n";
+                $renderer->doc .= $this->_close($tag);
                 break;
         }
         return true;
@@ -162,57 +184,84 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
      *
      * @author:   Gabriel Birke <birke@d-scribe.de>
      */
-    function render_odt(&$renderer, $data) {
-        list ($state, $param) = $data;
+    protected function render_odt(&$renderer, $data) {
+        static $param_styles = array('dd' => 'def_f5_list', 'dt' => 'def_f5_term');
+        $this->_set_odt_styles($renderer);
 
-        $param_styles = array('dd' => 'def_f5_list', 'dt' => 'def_f5_term');
+        list ($tag, $state, $match) = $data;
+
         switch ( $state ) {
             case DOKU_LEXER_ENTER:
-                $renderer->autostyles["def_f5_term"] = '
-                  <style:style style:name="def_f5_term" style:display-name="def_term" style:family="paragraph">
-                      <style:paragraph-properties fo:margin-top="0.18cm" fo:margin-bottom="0cm" fo:keep-together="always" style:page-number="auto" fo:keep-with-next="always"/>
-                      <style:text-properties fo:font-weight="bold"/>
-                  </style:style>';
-                $renderer->autostyles["def_f5_list"] = '
-                  <style:style style:name="def_f5_list" style:display-name="def_list" style:family="paragraph">
-                      <style:paragraph-properties fo:margin-left="0.25cm" fo:margin-right="0cm" fo:text-indent="0cm" style:auto-text-indent="false"/>
-                  </style:style>';
-                $renderer->doc .= '</text:p>';
-                $renderer->doc .= '<text:p  text:style-name="'.$param_styles[$param].'">';
+                if ($tag == 'dl') {
+                    $renderer->p_close();
+                } else {
+                    $renderer->p_open($param_styles[$tag]);
+                }
                 break;
             case DOKU_LEXER_MATCHED:
-                $renderer->doc .= '</text:p>';
-                $renderer->doc .= '<text:p  text:style-name="'.$param_styles[$param].'">';
-                break;
-            case DOKU_LEXER_UNMATCHED: // defensive, shouldn't occur
-                $renderer->cdata($param);
+            case DOKU_LEXER_UNMATCHED:                            // defensive, shouldn't occur
+                $renderer->cdata($match);
                 break;
             case DOKU_LEXER_EXIT:
-                $renderer->doc .= '</text:p>';
-                $renderer->p_open();
+                if ($tag != 'dl') {
+                    $renderer->p_close();
+                } else {
+                    $renderer->p_open();
+                }
                 break;
         }
+
         return true;
     }
 
     /**
-     * open a definition list item, used by render_xhtml()
-     * @param   $tag  (string)    'dt' or 'dd'
+     * set definition list styles, used by render_odt()
+     *
+     * add definition list styles to the renderer's autostyles property (once only)
+     *
+     * @param  $renderer    current (odt) renderer object
+     * @return void
+     */
+    protected function _set_odt_styles(&$renderer) {
+        static $do_once = true;
+
+        if ($do_once) {
+            $renderer->autostyles["def_f5_term"] = '
+                <style:style style:name="def_f5_term" style:display-name="def_term" style:family="paragraph">
+                    <style:paragraph-properties fo:margin-top="0.18cm" fo:margin-bottom="0cm" fo:keep-together="always" style:page-number="auto" fo:keep-with-next="always"/>
+                    <style:text-properties fo:font-weight="bold"/>
+                </style:style>';
+            $renderer->autostyles["def_f5_list"] = '
+                <style:style style:name="def_f5_list" style:display-name="def_list" style:family="paragraph">
+                    <style:paragraph-properties fo:margin-left="0.25cm" fo:margin-right="0cm" fo:text-indent="0cm" style:auto-text-indent="false"/>
+                </style:style>';
+
+            $do_once = false;
+        }
+    }
+
+    /**
+     * open a definition list tag, used by render_xhtml()
+     *
+     * @param   $tag  (string)    'dl', 'dt' or 'dd'
      * @return  (string)          html used to open the tag
      */
-    function _open($tag) {
-        array_push($this->stack, $tag);
-        $wrap = ($this->getConf('dt_fancy') && $tag == 'dt') ? "<span class='term'>" : "";
+    protected function _open($tag) {
+        if ($tag == 'dl' && $this->getConf('classname')) {
+            $tag .= ' class="'.$this->getConf('classname').'"';
+        }
+        $wrap = ($tag == 'dt' && $this->getConf('dt_fancy')) ? '<span class="term">' : '';
         return "<$tag>$wrap";
     }
 
     /**
-     * close a definition list item, used by render_xhtml()
+     * close a definition list tag, used by render_xhtml()
+     *
+     * @param   $tag  (string)    'dl', 'dt' or 'dd'
      * @return  (string)          html used to close the tag
      */
-    function _close() {
-        $tag = array_pop($this->stack);
-        $wrap = ($this->getConf('dt_fancy') && $tag == 'dt') ? "</span>" : "";
+    protected function _close($tag) {
+        $wrap = ($tag == 'dt' && $this->getConf('dt_fancy')) ? '</span>' : '';
         return "$wrap</$tag>\n";
     }
 
