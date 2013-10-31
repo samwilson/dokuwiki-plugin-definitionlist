@@ -1,7 +1,7 @@
 base    definitionlist
 author  Chris Smith
 email   chris@jalakai.co.uk
-date    2008-08-13
+date    2013-10-31
 name    Definition List plugin
 desc    Add syntax for definition lists.
 url     http://www.dokuwiki.org/plugin:definitionlist
