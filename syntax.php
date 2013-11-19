@@ -18,6 +18,17 @@
  *   ~~dlist:classname~~
  * is available to set arbitrary classname for the next definition list block.
  *
+ * More complex syntax:
+ *   ;dtclass| term
+ *   :ddclass| definition1
+ *   : definition2
+ * will generate following XHTML:
+ * <dl class="classname">
+ *   <dt class="dtclass">term</dt>
+ *   <dd class="ddclass">definition1</dd>
+ *   <dd>definition2</dd>
+ * </dl>
+ *
  * This plugin is heavily based on the definitions plugin by Pavel Vitis which
  * in turn drew from the original definition list plugin by Stephane Chamberland.
  * A huge thanks to both of them.
@@ -71,12 +82,15 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
 
         $this->Lexer->addSpecialPattern('~~dlist:.*?~~', $mode, 'plugin_definitionlist');
 
-        $this->Lexer->addEntryPattern('\n {2,}'.DL_DT, $mode, 'plugin_definitionlist');
-        $this->Lexer->addEntryPattern('\n\t{1,}'.DL_DT, $mode, 'plugin_definitionlist');
+        $this->Lexer->addEntryPattern('\n {2,}(?:'.DL_DT.'[^\n]*?\||'.DL_DT.')', $mode, 'plugin_definitionlist');
+        $this->Lexer->addEntryPattern('\n\t{1,}(?:'.DL_DT.'[^\n]*?\||'.DL_DT.')', $mode, 'plugin_definitionlist');
+
+        $this->Lexer->addPattern('\n {2,}(?:'.DL_DT.'[^\n]*?\||'.DL_DT.')', 'plugin_definitionlist');
+        $this->Lexer->addPattern('\n {2,}(?:'.DL_DD.'[^\n]*?\||'.DL_DD.')', 'plugin_definitionlist');
+        $this->Lexer->addPattern('\n\t{1,}(?:'.DL_DT.'[^\n]*?\||'.DL_DT.')', 'plugin_definitionlist');
+        $this->Lexer->addPattern('\n\t{1,}(?:'.DL_DD.'[^\n]*?\||'.DL_DD.')', 'plugin_definitionlist');
 
         $this->Lexer->addPattern('(?: '.DL_DD.' )', 'plugin_definitionlist');
-        $this->Lexer->addPattern('\n {2,}(?:'.DL_DT.'|'.DL_DD.')', 'plugin_definitionlist');
-        $this->Lexer->addPattern('\n\t{1,}(?:'.DL_DT.'|'.DL_DD.')', 'plugin_definitionlist');
     }
 
     public function postConnect() {
@@ -99,15 +113,19 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
                     // set class attribute for the dl tag
                     if (empty($this->dlclass)) $this->dlclass = $this->getConf('classname');
                     $this->_writeCall('dl',DOKU_LEXER_ENTER,$pos,$this->dlclass,$handler);    // open a new DL
+                    $match = ltrim($match);
+                    $match = trim(substr($match, 1,-1)); // class for the dt tag
                     $this->_writeCall('dt',DOKU_LEXER_ENTER,$pos,$match,$handler);    // always start with a DT
                     break;
 
             case DOKU_LEXER_MATCHED:
                     $oldtag = array_pop($this->stack);
-                    $newtag = (substr(rtrim($match), -1) == DL_DT) ? 'dt' : 'dd';
-                    array_push($this->stack, $newtag);
-
                     $this->_writeCall($oldtag,DOKU_LEXER_EXIT,$pos,$match,$handler);  // close the current definition list item...
+
+                    $match = ltrim($match);
+                    $newtag = ($match[0] == DL_DT) ? 'dt' : 'dd';
+                    array_push($this->stack, $newtag);
+                    $match = trim(substr($match, 1,-1)); // class for the newtag
                     $this->_writeCall($newtag,DOKU_LEXER_ENTER,$pos,$match,$handler); // ...and open the new dl item
                     break;
 
