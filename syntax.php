@@ -1,7 +1,7 @@
 <?php
 /**
  * Allow creation of XHTML definition lists:
- * <dl>
+ * <dl class="classname">
  *   <dt>term</dt>
  *   <dd>definition</dd>
  * </dl>
@@ -13,6 +13,21 @@
  *
  * As with other dokuwiki lists, each line must start with 2 spaces or a tab.
  * Nested definition lists are not supported at this time.
+ *
+ * Additional Macro syntax:
+ *   ~~dlist:classname~~
+ * is available to set arbitrary classname for the next definition list block.
+ *
+ * More complex syntax:
+ *   ;dtclass| term
+ *   :ddclass| definition1
+ *   : definition2
+ * will generate following XHTML:
+ * <dl class="classname">
+ *   <dt class="dtclass">term</dt>
+ *   <dd class="ddclass">definition1</dd>
+ *   <dd>definition2</dd>
+ * </dl>
  *
  * This plugin is heavily based on the definitions plugin by Pavel Vitis which
  * in turn drew from the original definition list plugin by Stephane Chamberland.
@@ -53,6 +68,7 @@ if (!defined('DL_DD')) define('DL_DD', ':'); // character to indicate a definiti
 class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
 
     protected $stack = array();    // stack of currently open definition list items - used by handle() method
+    protected $dlclass = '';       // register of classname for dl tags
 
     public function getType() { return 'container'; }
     public function getAllowedTypes() { return array('container','substition','protected','disabled','formatting'); }
@@ -64,12 +80,17 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
      */
     public function connectTo($mode) {
 
-        $this->Lexer->addEntryPattern('\n {2,}'.DL_DT, $mode, 'plugin_definitionlist');
-        $this->Lexer->addEntryPattern('\n\t{1,}'.DL_DT, $mode, 'plugin_definitionlist');
+        $this->Lexer->addSpecialPattern('~~dlist:.*?~~', $mode, 'plugin_definitionlist');
+
+        $this->Lexer->addEntryPattern('\n {2,}(?:'.DL_DT.'[^\n]*?\||'.DL_DT.')', $mode, 'plugin_definitionlist');
+        $this->Lexer->addEntryPattern('\n\t{1,}(?:'.DL_DT.'[^\n]*?\||'.DL_DT.')', $mode, 'plugin_definitionlist');
+
+        $this->Lexer->addPattern('\n {2,}(?:'.DL_DT.'[^\n]*?\||'.DL_DT.')', 'plugin_definitionlist');
+        $this->Lexer->addPattern('\n {2,}(?:'.DL_DD.'[^\n]*?\||'.DL_DD.')', 'plugin_definitionlist');
+        $this->Lexer->addPattern('\n\t{1,}(?:'.DL_DT.'[^\n]*?\||'.DL_DT.')', 'plugin_definitionlist');
+        $this->Lexer->addPattern('\n\t{1,}(?:'.DL_DD.'[^\n]*?\||'.DL_DD.')', 'plugin_definitionlist');
 
         $this->Lexer->addPattern('(?: '.DL_DD.' )', 'plugin_definitionlist');
-        $this->Lexer->addPattern('\n {2,}(?:'.DL_DT.'|'.DL_DD.')', 'plugin_definitionlist');
-        $this->Lexer->addPattern('\n\t{1,}(?:'.DL_DT.'|'.DL_DD.')', 'plugin_definitionlist');
     }
 
     public function postConnect() {
@@ -82,18 +103,29 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
      */
     public function handle($match, $state, $pos, Doku_Handler $handler) {
         switch ( $state ) {
+            case DOKU_LEXER_SPECIAL:
+                    // set register of classname for dl tags
+                    $this->dlclass = trim(substr($match, 8, -2));
+                    break;
+
             case DOKU_LEXER_ENTER:
                     array_push($this->stack, 'dt');
-                    $this->_writeCall('dl',DOKU_LEXER_ENTER,$pos,$match,$handler);    // open a new DL
+                    // set class attribute for the dl tag
+                    if (empty($this->dlclass)) $this->dlclass = $this->getConf('classname');
+                    $this->_writeCall('dl',DOKU_LEXER_ENTER,$pos,$this->dlclass,$handler);    // open a new DL
+                    $match = ltrim($match);
+                    $match = trim(substr($match, 1,-1)); // class for the dt tag
                     $this->_writeCall('dt',DOKU_LEXER_ENTER,$pos,$match,$handler);    // always start with a DT
                     break;
 
             case DOKU_LEXER_MATCHED:
                     $oldtag = array_pop($this->stack);
-                    $newtag = (substr(rtrim($match), -1) == DL_DT) ? 'dt' : 'dd';
-                    array_push($this->stack, $newtag);
-
                     $this->_writeCall($oldtag,DOKU_LEXER_EXIT,$pos,$match,$handler);  // close the current definition list item...
+
+                    $match = ltrim($match);
+                    $newtag = ($match[0] == DL_DT) ? 'dt' : 'dd';
+                    array_push($this->stack, $newtag);
+                    $match = trim(substr($match, 1,-1)); // class for the newtag
                     $this->_writeCall($newtag,DOKU_LEXER_ENTER,$pos,$match,$handler); // ...and open the new dl item
                     break;
 
@@ -105,6 +137,8 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
 
                     // and finally close the surrounding DL
                     $this->_writeCall('dl',DOKU_LEXER_EXIT,$pos,$match,$handler);
+                    // clear register of classname for dl tags
+                    $this->dlclass = '';
                     break;
 
             case DOKU_LEXER_UNMATCHED:
@@ -121,10 +155,10 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
      * instruction params are of the format:
      *    0 => tag    (string)    'dl','dt','dd'
      *    1 => state  (int)       DOKU_LEXER_??? state constant
-     *    2 => match  (string)    expected to be empty
+     *    2 => match  (string)    class attribute of the tag
      */
     protected function _writeCall($tag, $state, $pos, $match, &$handler) {
-        $handler->addPluginCall('definitionlist', array($tag, $state, ''), $state, $pos, $match);
+        $handler->addPluginCall('definitionlist', array($tag, $state, $match), $state, $pos, $match);
     }
 
     /**
@@ -166,7 +200,7 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
 
         switch ( $state ) {
             case DOKU_LEXER_ENTER:
-                $renderer->doc .= $this->_open($tag);
+                $renderer->doc .= $this->_open($tag, $match);
                 break;
             case DOKU_LEXER_MATCHED:
             case DOKU_LEXER_UNMATCHED:                            // defensive, shouldn't occur
@@ -244,17 +278,16 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
      * open a definition list tag, used by render_xhtml()
      *
      * @param   $tag  (string)    'dl', 'dt' or 'dd'
+     * @param   $class (string)   class attribute of the tag
      * @return  (string)          html used to open the tag
      */
-    protected function _open($tag) {
+    protected function _open($tag, $class='') {
         if ($tag == 'dl') {
-            if ($this->getConf('classname')) {
-                $tag .= ' class="'.$this->getConf('classname').'"';
-            }
             $wrap = NL;
         } else {
             $wrap = ($tag == 'dt' && $this->getConf('dt_fancy')) ? '<span class="term">' : '';
         }
+        if ($class) $tag.= ' class="'.$class.'"';
         return "<$tag>$wrap";
     }
 
