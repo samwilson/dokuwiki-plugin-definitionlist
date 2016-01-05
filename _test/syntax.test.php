@@ -99,7 +99,7 @@ class plugin_definitionlist_syntax_test extends DokuWikiTest {
 
     function test_nonfancy() {
         global $conf;
-        $conf['plugin']['definitionlist']['dt_fancy'] = false;
+        $conf['plugin']['definitionlist']['dt_fancy'] = 0;
 
         $in1 = NL.'  ; Term'.NL
                  .'  : Definition'.NL;
