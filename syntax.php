@@ -26,7 +26,7 @@
  *             Default 'plugin_definitionlist'. This is the class used in the
  *             bundled CSS file.
  *
- * ODT support provided by Gabriel Birke
+ * ODT support provided by Gabriel Birke and LarsDW223
  *
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
  * @author     Chris Smith <chris [at] jalakai [dot] co [dot] uk>
@@ -135,7 +135,12 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
 
         switch  ($format) {
             case 'xhtml' : return $this->render_xhtml($renderer,$data);
-            case 'odt'   : return $this->render_odt($renderer,$data);
+            case 'odt'   :
+                if (!method_exists ($renderer, 'getODTPropertiesFromElement')) {
+                    return $this->render_odt_old($renderer,$data);
+                } else {
+                    return $this->render_odt_new($renderer,$data);
+                }
             default :
                 //  handle unknown formats generically - map both 'dt' & 'dd' to paragraphs; ingnore the 'dl' container
                 list ($tag, $state, $match) = $data;
@@ -184,9 +189,9 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
      *
      * @author:   Gabriel Birke <birke@d-scribe.de>
      */
-    protected function render_odt(&$renderer, $data) {
+    protected function render_odt_old(&$renderer, $data) {
         static $param_styles = array('dd' => 'def_f5_list', 'dt' => 'def_f5_term');
-        $this->_set_odt_styles($renderer);
+        $this->_set_odt_styles_old($renderer);
 
         list ($tag, $state, $match) = $data;
 
@@ -215,14 +220,83 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
     }
 
     /**
-     * set definition list styles, used by render_odt()
+     * Create output for ODT renderer (newer version)
+     * @author: LarsDW223
+     */
+    protected function render_odt_new(&$renderer, $data) {
+        static $style_data = array();
+        $this->_set_odt_styles_new($renderer, $style_data);
+
+        list ($tag, $state, $match) = $data;
+
+        switch ( $state ) {
+            case DOKU_LEXER_ENTER:
+                if ($tag == 'dl') {
+                    $properties = array();
+                    $renderer->_odtTableOpenUseProperties($properties);
+
+                    $properties ['width'] = $style_data ['margin-left'];
+                    $renderer->_odtTableAddColumnUseProperties($properties);
+                } else {
+                    if ($tag == 'dt') {
+                        $renderer->tablerow_open();
+
+                        $properties = array();
+                        $properties ['border-left'] = 'none';
+                        $properties ['border-right'] = 'none';
+                        $properties ['border-top'] = 'none';
+                        $properties ['border-bottom'] = $style_data ['border-bottom'];
+                        $renderer->_odtTableCellOpenUseProperties ($properties);
+
+                        $renderer->_odtSpanOpen('Plugin_DefinitionList_Term');
+                    } else {
+                        $properties = array();
+                        $properties ['border-left'] = 'none';
+                        $properties ['border-right'] = 'none';
+                        $properties ['border-top'] = 'none';
+                        $properties ['border-bottom'] = $style_data ['border-bottom'];
+                        $renderer->_odtTableCellOpenUseProperties ($properties);
+
+                        if (!empty($style_data ['image'])) {
+                            $properties = array();
+                            $properties ['margin-right'] = $style_data ['padding-left'];
+                            $renderer->_odtAddImageUseProperties($style_data ['image'], $properties);
+                        }
+
+                        $renderer->_odtSpanOpen('Plugin_DefinitionList_Description');
+                    }
+                }
+                break;
+            case DOKU_LEXER_MATCHED:
+            case DOKU_LEXER_UNMATCHED:                            // defensive, shouldn't occur
+                $renderer->cdata($match);
+                break;
+            case DOKU_LEXER_EXIT:
+                if ($tag != 'dl') {
+                    $renderer->_odtSpanClose();
+                    $renderer->tablecell_close();
+                    if ($tag == 'dd') {
+                        $renderer->p_close();
+                        $renderer->tablerow_close();
+                    }
+                } else {
+                    $renderer->table_close();
+                }
+                break;
+        }
+
+        return true;
+    }
+
+    /**
+     * set definition list styles, used by render_odt_old()
      *
      * add definition list styles to the renderer's autostyles property (once only)
      *
      * @param  $renderer    current (odt) renderer object
      * @return void
      */
-    protected function _set_odt_styles(&$renderer) {
+    protected function _set_odt_styles_old(&$renderer) {
         static $do_once = true;
 
         if ($do_once) {
@@ -235,6 +309,72 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
                 <style:style style:name="def_f5_list" style:display-name="def_list" style:family="paragraph">
                     <style:paragraph-properties fo:margin-left="0.25cm" fo:margin-right="0cm" fo:text-indent="0cm" style:auto-text-indent="false"/>
                 </style:style>';
+
+            $do_once = false;
+        }
+    }
+
+    /**
+     * Create definition list styles, used by render_odt_new():
+     * Adds definition list styles to the ODT documents common styles (once only)
+     *
+     * @param  Doku_renderer $renderer   current (odt) renderer object
+     * @param  Array         $style_data Array for returning relevant properties to the caller
+     * @author: LarsDW223
+     */
+    protected function _set_odt_styles_new(Doku_Renderer $renderer, &$style_data) {
+        static $do_once = true;
+
+        if ($do_once) {
+            // Create parent style to group the others beneath it
+            if (!$renderer->styleExists('Plugin_DivAlign2')) {
+                $parent_properties = array();
+                $parent_properties ['style-parent'] = NULL;
+                $parent_properties ['style-class'] = 'Plugin_DefinitionList';
+                $parent_properties ['style-name'] = 'Plugin_DefinitionList';
+                $parent_properties ['style-display-name'] = 'Plugin DefinitionList';
+                $renderer->createTextStyle($parent_properties);
+            }
+
+            $state = new helper_plugin_odt_cssdocument();
+            $state->open('dl', 'class="plugin_definitionlist"', NULL, NULL);
+            $state->open('dd', NULL, NULL, NULL);
+
+            // Get CSS properties for ODT export.
+            $dd_properties = array ();
+            $renderer->getODTPropertiesFromElement ($dd_properties, $state->getCurrentElement(), 'screen', true);
+
+            $state->close('dd');
+            $state->open('dt', NULL, NULL, NULL);
+
+            // Get CSS properties for ODT export.
+            $dt_properties = array ();
+            $renderer->getODTPropertiesFromElement ($dt_properties, $state->getCurrentElement(), 'screen', true);
+
+            // Set style data to be returned to caller
+            $style_data ['border-bottom'] = $dt_properties ['border-top'];
+            $style_data ['image'] = $dd_properties ['background-image'];
+            $style_data ['margin-left'] = $dd_properties ['margin-left'];
+            $style_data ['padding-left'] = $dd_properties ['padding-left'];
+
+            // Create text style for term
+            $dt_properties ['border-top'] = NULL;
+            $dt_properties ['style-class'] = NULL;
+            $dt_properties ['style-parent'] = 'Plugin_DefinitionList';
+            $dt_properties ['style-name'] = 'Plugin_DefinitionList_Term';
+            $dt_properties ['style-display-name'] = 'Term';
+            $renderer->createTextStyle($dt_properties);
+
+            // Create text style for description
+            $dd_properties ['border-bottom'] = $dt_properties ['border-top'];
+            $dd_properties ['style-class'] = NULL;
+            $dd_properties ['style-parent'] = 'Plugin_DefinitionList';
+            $dd_properties ['style-name'] = 'Plugin_DefinitionList_Description';
+            $dd_properties ['style-display-name'] = 'Description';
+            $dd_properties ['background'] = NULL;
+            $renderer->createTextStyle($dd_properties);
+            
+            unset($state);
 
             $do_once = false;
         }
