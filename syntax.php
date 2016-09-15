@@ -336,20 +336,28 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
                 $renderer->createTextStyle($parent_properties);
             }
 
-            $state = new helper_plugin_odt_cssdocument();
-            $state->open('dl', 'class="plugin_definitionlist"', NULL, NULL);
-            $state->open('dd', NULL, NULL, NULL);
+            // Get the current HTML stack from the ODT renderer
+            $stack = $renderer->getHTMLStack ();
+
+            // Save state to restore it later
+            $state = array();
+            $stack->getState ($state);
+            // Only for debugging ==> see end of this function
+            //$renderer->dumpHTMLStack ();
+
+            $stack->open('dl', 'class="plugin_definitionlist"', NULL, NULL);
+            $stack->open('dd', NULL, NULL, NULL);
 
             // Get CSS properties for ODT export.
             $dd_properties = array ();
-            $renderer->getODTPropertiesFromElement ($dd_properties, $state->getCurrentElement(), 'screen', true);
+            $renderer->getODTPropertiesFromElement ($dd_properties, $stack->getCurrentElement(), 'screen', true);
 
-            $state->close('dd');
-            $state->open('dt', NULL, NULL, NULL);
+            $stack->close('dd');
+            $stack->open('dt', NULL, NULL, NULL);
 
             // Get CSS properties for ODT export.
             $dt_properties = array ();
-            $renderer->getODTPropertiesFromElement ($dt_properties, $state->getCurrentElement(), 'screen', true);
+            $renderer->getODTPropertiesFromElement ($dt_properties, $stack->getCurrentElement(), 'screen', true);
 
             // Set style data to be returned to caller
             $style_data ['border-bottom'] = $dt_properties ['border-top'];
@@ -373,8 +381,11 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
             $dd_properties ['style-display-name'] = 'Description';
             $dd_properties ['background'] = NULL;
             $renderer->createTextStyle($dd_properties);
-            
-            unset($state);
+
+            $stack->restoreState ($state);
+            // Only for debugging to check if the ODT plugins HTML stack
+            // is restored to the start state
+            //$renderer->dumpHTMLStack ();
 
             $do_once = false;
         }
