@@ -166,7 +166,7 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
      * create output for the xhtml renderer
      *
      */
-    protected function render_xhtml(&$renderer, $data) {
+    protected function render_xhtml(Doku_Renderer $renderer, $data) {
         list($tag,$state,$match) = $data;
 
         switch ( $state ) {
@@ -189,7 +189,7 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
      *
      * @author:   Gabriel Birke <birke@d-scribe.de>
      */
-    protected function render_odt_old(&$renderer, $data) {
+    protected function render_odt_old(Doku_Renderer $renderer, $data) {
         static $param_styles = array('dd' => 'def_f5_list', 'dt' => 'def_f5_term');
         $this->_set_odt_styles_old($renderer);
 
@@ -223,7 +223,7 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
      * Create output for ODT renderer (newer version)
      * @author: LarsDW223
      */
-    protected function render_odt_new(&$renderer, $data) {
+    protected function render_odt_new(Doku_Renderer $renderer, $data) {
         static $style_data = array();
         $this->_set_odt_styles_new($renderer, $style_data);
 
@@ -296,7 +296,7 @@ class syntax_plugin_definitionlist extends DokuWiki_Syntax_Plugin {
      * @param  $renderer    current (odt) renderer object
      * @return void
      */
-    protected function _set_odt_styles_old(&$renderer) {
+    protected function _set_odt_styles_old(Doku_Renderer $renderer) {
         static $do_once = true;
 
         if ($do_once) {
